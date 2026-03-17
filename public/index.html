@@ -13,7 +13,8 @@
           <p class="eyebrow">Netlify Functions starter</p>
           <h1>Grid Quest</h1>
           <p class="subtitle">
-            Every free cell is reachable. A Beast starts at least 5 steps away and moves once after every player move.
+            A 10x10 board with random walls, a roaming Beast, and a view image
+            based on which exits are open around the player.
           </p>
         </div>
       </header>
@@ -40,14 +41,25 @@
               <span><i class="legend-box empty"></i> Empty</span>
               <span><i class="legend-box wall"></i> Wall</span>
               <span><i class="legend-box visited"></i> Visited</span>
-              <span><i class="legend-box player"></i> Player</span>
               <span><i class="legend-box beast"></i> Beast</span>
+              <span><i class="legend-box player"></i> Player</span>
             </div>
           </div>
           <div id="grid" class="grid" aria-live="polite"></div>
         </section>
 
         <aside class="panel side-panel">
+          <h2>View</h2>
+          <div class="scene-image-frame">
+            <img
+              id="sceneImage"
+              class="scene-image"
+              src="/images/crossroad.png"
+              alt="Current view based on open exits"
+            />
+          </div>
+          <p id="sceneImageLabel" class="scene-image-label">Open exits: -</p>
+
           <h2>Status</h2>
           <dl class="stats">
             <div>
@@ -55,16 +67,12 @@
               <dd id="turnValue">-</dd>
             </div>
             <div>
-              <dt>Player</dt>
+              <dt>Position</dt>
               <dd id="positionValue">-</dd>
             </div>
             <div>
               <dt>Beast</dt>
-              <dd id="beastPositionValue">-</dd>
-            </div>
-            <div>
-              <dt>Beast distance</dt>
-              <dd id="beastDistanceValue">-</dd>
+              <dd id="beastValue">-</dd>
             </div>
             <div>
               <dt>Visited cells</dt>
@@ -73,6 +81,10 @@
             <div>
               <dt>Open moves</dt>
               <dd id="openMovesValue">-</dd>
+            </div>
+            <div>
+              <dt>Outcome</dt>
+              <dd id="outcomeValue">-</dd>
             </div>
           </dl>
 

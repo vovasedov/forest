@@ -7,9 +7,8 @@ export async function handler(event) {
 
     const size = body.size ?? query.size;
     const wallCount = body.wallCount ?? body.walls ?? query.wallCount ?? query.walls;
-    const minBeastDistance = body.minBeastDistance ?? query.minBeastDistance;
 
-    const game = generateGame({ size, wallCount, minBeastDistance });
+    const game = generateGame({ size, wallCount });
 
     return json(200, {
       message: 'New game created.',

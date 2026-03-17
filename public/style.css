@@ -11,8 +11,7 @@
   --wall: #475569;
   --visited: #1d4ed8;
   --player: #f59e0b;
-  --beast: #ef4444;
-  --caught: #fb7185;
+  --beast: #f43f5e;
   --empty: #0f172a;
   --shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
 }
@@ -52,6 +51,11 @@ body {
 h1,
 h2 {
   margin: 0;
+}
+
+.side-panel h2 + .scene-image-frame,
+.side-panel h2 + .stats {
+  margin-top: 14px;
 }
 
 .subtitle {
@@ -104,7 +108,7 @@ input {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-columns: minmax(0, 1fr) 360px;
   gap: 20px;
 }
 
@@ -173,7 +177,7 @@ input {
   display: grid;
   place-items: center;
   font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .cell.empty {
@@ -200,10 +204,25 @@ input {
   font-weight: 800;
 }
 
-.cell.caught {
-  background: var(--caught);
-  color: #111827;
-  font-weight: 900;
+.scene-image-frame {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.scene-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #0f172a;
+}
+
+.scene-image-label {
+  margin: 10px 0 18px;
+  color: var(--muted);
+  font-size: 0.92rem;
 }
 
 .stats {
@@ -235,6 +254,7 @@ input {
   min-height: 48px;
   margin: 0 0 18px;
   color: var(--accent);
+  line-height: 1.5;
 }
 
 .button {
