@@ -1,0 +1,13 @@
+{
+  "name": "grid-quest-starter",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "netlify dev",
+    "start": "netlify dev"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.39.1"
+  }
+}
