@@ -20,6 +20,8 @@ const IMAGE_BY_EXITS = {
   'back': '/images/deadend-back.png'
 };
 
+const ENDGAME_IMAGE = '/images/endgame.png';
+
 const elements = {
   sizeInput: document.getElementById('sizeInput'),
   wallInput: document.getElementById('wallInput'),
@@ -77,8 +79,16 @@ function formatOpenMoves(availableMoves) {
 }
 
 function updateSceneImage() {
+  if (game?.gameOver && game?.outcome === 'caught') {
+    elements.sceneImage.src = ENDGAME_IMAGE;
+    elements.sceneImage.alt = 'The Beast has caught the player';
+    elements.sceneImageLabel.textContent = 'The Beast found you.';
+    return;
+  }
+
   const openMoves = formatOpenMoves(game?.availableMoves);
   elements.sceneImage.src = getImageForMoves(game?.availableMoves);
+  elements.sceneImage.alt = 'Current view based on open exits';
   elements.sceneImageLabel.textContent = `Open exits: ${openMoves || 'none'}`;
 }
 

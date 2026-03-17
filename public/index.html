@@ -13,7 +13,7 @@
           <p class="eyebrow">Netlify Functions starter</p>
           <h1>Grid Quest</h1>
           <p class="subtitle">
-            A 10x10 board with random walls, a roaming Beast, and a view image
+            A 10x10 board with random walls, a roaming Beast, and a scene image
             based on which exits are open around the player.
           </p>
         </div>
@@ -33,24 +33,19 @@
         </div>
       </section>
 
-      <section class="layout">
-        <section class="panel board-panel">
-          <div class="board-header">
-            <h2>Board</h2>
-            <div class="legend">
-              <span><i class="legend-box empty"></i> Empty</span>
-              <span><i class="legend-box wall"></i> Wall</span>
-              <span><i class="legend-box visited"></i> Visited</span>
-              <span><i class="legend-box beast"></i> Beast</span>
-              <span><i class="legend-box player"></i> Player</span>
+      <section class="layout layout-main">
+        <section class="panel scene-panel">
+          <div class="scene-panel-header">
+            <div>
+              <h2>View</h2>
+              <p class="scene-panel-copy">
+                This is the main scene the player should focus on.
+              </p>
             </div>
+            <p id="sceneImageLabel" class="scene-image-label">Open exits: -</p>
           </div>
-          <div id="grid" class="grid" aria-live="polite"></div>
-        </section>
 
-        <aside class="panel side-panel">
-          <h2>View</h2>
-          <div class="scene-image-frame">
+          <div class="scene-image-frame scene-image-frame-large">
             <img
               id="sceneImage"
               class="scene-image"
@@ -58,8 +53,9 @@
               alt="Current view based on open exits"
             />
           </div>
-          <p id="sceneImageLabel" class="scene-image-label">Open exits: -</p>
+        </section>
 
+        <aside class="panel side-panel">
           <h2>Status</h2>
           <dl class="stats">
             <div>
@@ -102,6 +98,29 @@
             <div></div>
           </div>
         </aside>
+      </section>
+
+      <section class="layout layout-secondary">
+        <details class="panel map-spoiler">
+          <summary>
+            Show map (spoiler)
+            <span class="spoiler-hint">Open only if you really want to see it</span>
+          </summary>
+
+          <div class="board-panel-inner">
+            <div class="board-header">
+              <h2>Board</h2>
+              <div class="legend">
+                <span><i class="legend-box empty"></i> Empty</span>
+                <span><i class="legend-box wall"></i> Wall</span>
+                <span><i class="legend-box visited"></i> Visited</span>
+                <span><i class="legend-box beast"></i> Beast</span>
+                <span><i class="legend-box player"></i> Player</span>
+              </div>
+            </div>
+            <div id="grid" class="grid" aria-live="polite"></div>
+          </div>
+        </details>
       </section>
     </main>
 
