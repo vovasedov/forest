@@ -21,11 +21,15 @@ const IMAGE_BY_EXITS = {
 };
 
 const ENDGAME_IMAGE = '/images/endgame.png';
+const STORAGE_KEY = 'grid-quest-current-game';
 
 const elements = {
   sizeInput: document.getElementById('sizeInput'),
   wallInput: document.getElementById('wallInput'),
+  beastCountInput: document.getElementById('beastCountInput'),
   newGameButton: document.getElementById('newGameButton'),
+  catchModeButton: document.getElementById('catchCenterButton'),
+  actionModeText: document.getElementById('actionModeText'),
   grid: document.getElementById('grid'),
   turnValue: document.getElementById('turnValue'),
   positionValue: document.getElementById('positionValue'),
@@ -44,6 +48,7 @@ const elements = {
 
 let game = null;
 let busy = false;
+let catchMode = false;
 
 const directionButtons = {
   forward: elements.moveForward,
@@ -54,6 +59,31 @@ const directionButtons = {
 
 function createKey(x, y) {
   return `${x},${y}`;
+}
+
+function getBeasts(source = game) {
+  if (!source) {
+    return [];
+  }
+
+  if (Array.isArray(source.beasts)) {
+    return source.beasts;
+  }
+
+  if (source.beast && Number.isInteger(source.beast.x) && Number.isInteger(source.beast.y)) {
+    return [source.beast];
+  }
+
+  return [];
+}
+
+function saveGame() {
+  if (!game) {
+    localStorage.removeItem(STORAGE_KEY);
+    return;
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(game));
 }
 
 function setMessage(message, isError = false) {
@@ -78,11 +108,36 @@ function formatOpenMoves(availableMoves) {
     .join(', ');
 }
 
+function isAdjacentBeast(direction) {
+  if (!game) {
+    return false;
+  }
+
+  const offsets = {
+    forward: { dx: 0, dy: -1 },
+    backward: { dx: 0, dy: 1 },
+    left: { dx: -1, dy: 0 },
+    right: { dx: 1, dy: 0 }
+  };
+
+  const offset = offsets[direction];
+  const targetX = game.player.x + offset.dx;
+  const targetY = game.player.y + offset.dy;
+  return getBeasts().some((beast) => beast.x === targetX && beast.y === targetY);
+}
+
 function updateSceneImage() {
   if (game?.gameOver && game?.outcome === 'caught') {
     elements.sceneImage.src = ENDGAME_IMAGE;
     elements.sceneImage.alt = 'The Beast has caught the player';
     elements.sceneImageLabel.textContent = 'The Beast found you.';
+    return;
+  }
+
+  if (game?.gameOver && game?.outcome === 'won') {
+    elements.sceneImage.src = getImageForMoves(game?.availableMoves);
+    elements.sceneImage.alt = 'Current view after a successful catch';
+    elements.sceneImageLabel.textContent = 'You caught a Beast and won!';
     return;
   }
 
@@ -92,14 +147,19 @@ function updateSceneImage() {
   elements.sceneImageLabel.textContent = `Open exits: ${openMoves || 'none'}`;
 }
 
+function setCatchMode(nextCatchMode) {
+  catchMode = Boolean(nextCatchMode && game && !game.gameOver);
+  elements.catchModeButton.classList.toggle('active', catchMode);
+  elements.catchModeButton.textContent = catchMode ? 'Cancel' : 'Catch';
+  elements.actionModeText.textContent = catchMode ? 'Mode: catch - choose a direction' : 'Mode: move';
+  renderButtons();
+}
+
 function setBusy(nextBusy) {
   busy = nextBusy;
   elements.newGameButton.disabled = nextBusy;
-
-  for (const [direction, button] of Object.entries(directionButtons)) {
-    const canMove = Boolean(game && !game.gameOver && game.availableMoves && game.availableMoves[direction]);
-    button.disabled = nextBusy || !canMove;
-  }
+  elements.catchModeButton.disabled = nextBusy || !game || game.gameOver;
+  renderButtons();
 }
 
 async function requestJson(url, options = {}) {
@@ -122,6 +182,12 @@ function renderGrid() {
 
   const wallSet = new Set((game.walls || []).map((wall) => createKey(wall.x, wall.y)));
   const visitedSet = new Set(game.visited || []);
+  const beastCounts = new Map();
+
+  for (const beast of getBeasts()) {
+    const beastKey = createKey(beast.x, beast.y);
+    beastCounts.set(beastKey, (beastCounts.get(beastKey) || 0) + 1);
+  }
 
   elements.grid.innerHTML = '';
   elements.grid.style.gridTemplateColumns = `repeat(${game.size}, minmax(0, 1fr))`;
@@ -131,19 +197,19 @@ function renderGrid() {
       const cell = document.createElement('div');
       const currentKey = createKey(x, y);
       const playerHere = game.player.x === x && game.player.y === y;
-      const beastHere = game.beast.x === x && game.beast.y === y;
+      const beastCountHere = beastCounts.get(currentKey) || 0;
       cell.className = 'cell';
       cell.title = `(${x}, ${y})`;
 
-      if (playerHere && beastHere) {
+      if (playerHere && beastCountHere > 0) {
         cell.classList.add('player');
         cell.textContent = 'X';
       } else if (playerHere) {
         cell.classList.add('player');
         cell.textContent = 'P';
-      } else if (beastHere) {
+      } else if (beastCountHere > 0) {
         cell.classList.add('beast');
-        cell.textContent = 'B';
+        cell.textContent = beastCountHere > 1 ? String(beastCountHere) : 'B';
       } else if (wallSet.has(currentKey)) {
         cell.classList.add('wall');
       } else if (visitedSet.has(currentKey)) {
@@ -170,17 +236,34 @@ function renderStats() {
 
   elements.turnValue.textContent = String(game.turn ?? 0);
   elements.positionValue.textContent = `${game.player.x}, ${game.player.y}`;
-  elements.beastValue.textContent = `${game.beast.x}, ${game.beast.y}`;
+  elements.beastValue.textContent = String(getBeasts().length);
   elements.visitedValue.textContent = String((game.visited || []).length);
   elements.openMovesValue.textContent = formatOpenMoves(game.availableMoves) || 'none';
   elements.outcomeValue.textContent = game.outcome || 'playing';
 }
 
 function renderButtons() {
+  const canAct = Boolean(game && !game.gameOver && !busy);
+
   for (const [direction, button] of Object.entries(directionButtons)) {
     button.dataset.direction = direction;
-    button.disabled = busy || !game || game.gameOver || !game.availableMoves || !game.availableMoves[direction];
+    if (!canAct) {
+      button.disabled = true;
+      button.classList.remove('catch-armed', 'catch-hit');
+      continue;
+    }
+
+    if (catchMode) {
+      button.disabled = false;
+      button.classList.add('catch-armed');
+      button.classList.toggle('catch-hit', isAdjacentBeast(direction));
+    } else {
+      button.disabled = !game.availableMoves || !game.availableMoves[direction];
+      button.classList.remove('catch-armed', 'catch-hit');
+    }
   }
+
+  elements.catchModeButton.disabled = !canAct;
 }
 
 function render() {
@@ -193,13 +276,17 @@ function render() {
 async function startNewGame() {
   const size = Number(elements.sizeInput.value || 10);
   const wallCount = Number(elements.wallInput.value || 40);
+  const beastCount = Number(elements.beastCountInput.value || 1);
 
+  setCatchMode(false);
   setBusy(true);
 
   try {
-    const data = await requestJson(`/api/new-game?size=${encodeURIComponent(size)}&wallCount=${encodeURIComponent(wallCount)}`);
+    const data = await requestJson(
+      `/api/new-game?size=${encodeURIComponent(size)}&wallCount=${encodeURIComponent(wallCount)}&beastCount=${encodeURIComponent(beastCount)}`
+    );
     game = data.game;
-    localStorage.setItem('grid-quest-current-game', JSON.stringify(game));
+    saveGame();
     setMessage(data.message || 'New game created.');
     render();
   } catch (error) {
@@ -209,7 +296,7 @@ async function startNewGame() {
   }
 }
 
-async function move(direction) {
+async function performAction(action, direction) {
   if (!game || busy || game.gameOver) {
     return;
   }
@@ -223,26 +310,38 @@ async function move(direction) {
         'content-type': 'application/json'
       },
       body: JSON.stringify({
+        action,
         direction,
         game
       })
     });
 
     game = data.game;
-    localStorage.setItem('grid-quest-current-game', JSON.stringify(game));
-    setMessage(data.message || `You moved ${direction}.`);
+    saveGame();
+    setMessage(data.message || (action === 'catch' ? `You threw the net ${direction}.` : `You moved ${direction}.`));
+    setCatchMode(false);
     render();
   } catch (error) {
     setMessage(error.message, true);
+    setCatchMode(false);
     render();
   } finally {
     setBusy(false);
   }
 }
 
+function handleDirectionPress(direction) {
+  if (catchMode) {
+    performAction('catch', direction);
+    return;
+  }
+
+  performAction('move', direction);
+}
+
 function restoreGame() {
   try {
-    const raw = localStorage.getItem('grid-quest-current-game');
+    const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       render();
       return;
@@ -251,10 +350,22 @@ function restoreGame() {
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === 'object') {
       game = parsed;
+      if (Number.isInteger(parsed.size)) {
+        elements.sizeInput.value = String(parsed.size);
+      }
+      if (Number.isInteger(parsed.wallCount)) {
+        elements.wallInput.value = String(parsed.wallCount);
+      }
+      const beasts = Array.isArray(parsed.beasts)
+        ? parsed.beasts.length
+        : parsed.beast
+          ? 1
+          : Number(parsed.beastCount || 1);
+      elements.beastCountInput.value = String(Math.min(5, Math.max(1, beasts)));
       setMessage('Restored your last local game.');
     }
   } catch {
-    localStorage.removeItem('grid-quest-current-game');
+    localStorage.removeItem(STORAGE_KEY);
   }
 
   render();
@@ -262,12 +373,33 @@ function restoreGame() {
 
 for (const [direction, button] of Object.entries(directionButtons)) {
   button.dataset.direction = direction;
-  button.addEventListener('click', () => move(direction));
+  button.addEventListener('click', () => handleDirectionPress(direction));
 }
+
+elements.catchModeButton.addEventListener('click', () => {
+  if (!game || busy || game.gameOver) {
+    return;
+  }
+
+  const nextState = !catchMode;
+  setCatchMode(nextState);
+
+  if (nextState) {
+    setMessage('Catch mode is active. Choose a direction to throw the net.');
+  } else {
+    setMessage('Catch mode cancelled.');
+  }
+});
 
 elements.newGameButton.addEventListener('click', startNewGame);
 
 window.addEventListener('keydown', (event) => {
+  if (event.key === ' ' || event.key === 'Enter') {
+    if (document.activeElement === elements.catchModeButton) {
+      return;
+    }
+  }
+
   const keyMap = {
     ArrowUp: 'forward',
     ArrowDown: 'backward',
@@ -283,13 +415,21 @@ window.addEventListener('keydown', (event) => {
     D: 'right'
   };
 
+  if (event.key === 'c' || event.key === 'C') {
+    if (game && !busy && !game.gameOver) {
+      event.preventDefault();
+      elements.catchModeButton.click();
+    }
+    return;
+  }
+
   const direction = keyMap[event.key];
   if (!direction) {
     return;
   }
 
   event.preventDefault();
-  move(direction);
+  handleDirectionPress(direction);
 });
 
 restoreGame();

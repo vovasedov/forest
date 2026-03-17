@@ -13,8 +13,7 @@
           <p class="eyebrow">Netlify Functions starter</p>
           <h1>Grid Quest</h1>
           <p class="subtitle">
-            A 10x10 board with random walls, a roaming Beast, and a scene image
-            based on which exits are open around the player.
+            Explore the maze, watch the roaming Beasts, and throw your net in the correct direction to win.
           </p>
         </div>
       </header>
@@ -27,6 +26,10 @@
         <div class="control-group">
           <label for="wallInput">Wall count</label>
           <input id="wallInput" type="number" min="0" max="2400" value="40" />
+        </div>
+        <div class="control-group">
+          <label for="beastCountInput">Beast count</label>
+          <input id="beastCountInput" type="number" min="1" max="5" value="1" />
         </div>
         <div class="control-group grow">
           <button id="newGameButton" class="button primary">Start new game</button>
@@ -56,7 +59,13 @@
         </section>
 
         <aside class="panel side-panel">
-          <h2>Status</h2>
+          <div class="side-panel-head">
+            <div>
+              <h2>Status</h2>
+              <p id="actionModeText" class="action-mode-text">Mode: move</p>
+            </div>
+          </div>
+
           <dl class="stats">
             <div>
               <dt>Turn</dt>
@@ -67,7 +76,7 @@
               <dd id="positionValue">-</dd>
             </div>
             <div>
-              <dt>Beast</dt>
+              <dt>Beasts</dt>
               <dd id="beastValue">-</dd>
             </div>
             <div>
@@ -91,7 +100,7 @@
             <button id="moveForward" class="button">Forward</button>
             <div></div>
             <button id="moveLeft" class="button">Left</button>
-            <button id="stayStill" class="button quiet" disabled>Move</button>
+            <button id="catchCenterButton" class="button catch-center" type="button">Catch</button>
             <button id="moveRight" class="button">Right</button>
             <div></div>
             <button id="moveBackward" class="button">Backward</button>

@@ -7,8 +7,9 @@ export async function handler(event) {
 
     const size = body.size ?? query.size;
     const wallCount = body.wallCount ?? body.walls ?? query.wallCount ?? query.walls;
+    const beastCount = body.beastCount ?? body.beasts ?? query.beastCount ?? query.beasts;
 
-    const game = generateGame({ size, wallCount });
+    const game = generateGame({ size, wallCount, beastCount });
 
     return json(200, {
       message: 'New game created.',
